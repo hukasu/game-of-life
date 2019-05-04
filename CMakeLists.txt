@@ -17,6 +17,7 @@ add_custom_target(
 add_executable(
     game
     src/main.cpp
+    src/vulkan_methods.cpp
 )
 target_link_libraries(
     game
