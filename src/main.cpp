@@ -48,7 +48,7 @@ void rebuildSwapchain(
     vk::DeviceMemory device_memory,
     vk::DescriptorSetLayout descriptor_set_layout,
     vk::CommandPool graphics_command_pool,
-    std::vector<game::Buffer> game_buffers,
+    game::Buffer game_buffer,
     game::Buffer vertex_buffer,
 
     vk::SwapchainKHR& swapchain,
@@ -169,7 +169,7 @@ void rebuildSwapchain(
         graphics_pipeline,
         graphics_pipeline_layout,
         vertex_buffer,
-        game_buffers,
+        game_buffer,
         grid_size,
         uniform_sets,
         command_buffers
@@ -267,18 +267,16 @@ int main(int argc, char** argv) {
         compute_command_pool
     );
 
-    std::vector<game::Buffer> game_buffers(5);
+    game::Buffer game_buffer;
     game::Buffer vertex_buffer;
     std::vector<game::Buffer> camera_buffers(swapchain_images.size());
-    for (uint32_t i = 0; i < game_buffers.size(); i++) {
-        game::createBuffer(
-            device,
-            grid_size * grid_size * sizeof(game::Cell),
-            { graphics_queue.index.value(), compute_queue.index.value() },
-            vk::BufferUsageFlagBits::eVertexBuffer,
-            game_buffers[i].buffer
-        );
-    }
+	game::createBuffer(
+		device,
+		grid_size * grid_size * sizeof(game::Cell),
+		{ graphics_queue.index.value(), compute_queue.index.value() },
+		vk::BufferUsageFlagBits::eVertexBuffer,
+		game_buffer.buffer
+	);
     game::createBuffer(
         device,
         vertices.size() * sizeof(game::Vertex),
@@ -297,10 +295,8 @@ int main(int argc, char** argv) {
     }
 
     vk::DeviceSize memory_req = 0;
-    for (uint32_t i = 0; i < game_buffers.size(); i++) {
-        game_buffers[i].mem_reqs = device.getBufferMemoryRequirements(game_buffers[i].buffer);
-        memory_req += game_buffers[i].mem_reqs.size + game_buffers[i].mem_reqs.alignment;
-    }
+    game_buffer.mem_reqs = device.getBufferMemoryRequirements(game_buffer.buffer);
+    memory_req += game_buffer.mem_reqs.size + game_buffer.mem_reqs.alignment;
     vertex_buffer.mem_reqs = device.getBufferMemoryRequirements(vertex_buffer.buffer);
     memory_req += vertex_buffer.mem_reqs.size + vertex_buffer.mem_reqs.alignment;
     for (uint32_t i = 0; i < camera_buffers.size(); i++) {
@@ -311,43 +307,39 @@ int main(int argc, char** argv) {
     vk::DeviceMemory device_memory;
     uint32_t device_memory_type_index;
     game::createDeviceMemory(device, physical_device, memory_req, device_memory_type_index, device_memory);
-    for (auto gbr : game_buffers) {
-        assert(bool(gbr.mem_reqs.memoryTypeBits & (1 << (device_memory_type_index - 1))));
-    }
-    assert(bool(vertex_buffer.mem_reqs.memoryTypeBits & (1 << (device_memory_type_index - 1))));
+    assert(bool(game_buffer.mem_reqs.memoryTypeBits & (1 << device_memory_type_index)));
+    assert(bool(vertex_buffer.mem_reqs.memoryTypeBits & (1 << device_memory_type_index)));
     for (auto cbr : camera_buffers) {
-        assert(bool(cbr.mem_reqs.memoryTypeBits & (1 << (device_memory_type_index - 1))));
+        assert(bool(cbr.mem_reqs.memoryTypeBits & (1 << device_memory_type_index)));
     }
 
     vk::DeviceSize memory_offset = 0;
-    for (uint32_t i = 0; i < game_buffers.size(); i++) {
-        if (memory_offset % game_buffers[i].mem_reqs.alignment) {
-            memory_offset += (game_buffers[i].mem_reqs.alignment - (memory_offset % game_buffers[i].mem_reqs.alignment));
-        }
-        device.bindBufferMemory(
-            game_buffers[i].buffer,
-            device_memory,
-            memory_offset
-        );
-        game_buffers[i].offset = memory_offset;
-        memory_offset += game_buffers[i].mem_reqs.size;
-    }
+	if (memory_offset % game_buffer.mem_reqs.alignment) {
+		memory_offset += (game_buffer.mem_reqs.alignment - (memory_offset % game_buffer.mem_reqs.alignment));
+	}
+	device.bindBufferMemory(
+		game_buffer.buffer,
+		device_memory,
+		memory_offset
+	);
+	game_buffer.offset = memory_offset;
+	memory_offset += game_buffer.mem_reqs.size;
     {
-        // std::random_device rd;
-        // std::mt19937 generator(rd());
-        // std::bernoulli_distribution bernoulli(0.5);
-        game::Cell* mapped_memory = static_cast<game::Cell*>(device.mapMemory(device_memory, 0, game_buffers[0].mem_reqs.size));
-        // uint32_t tenth = grid_size/10;
-        // for (uint32_t i = 0; i < tenth; i++) {
-        //     for (uint32_t j = 0; j < tenth; j++) {
-        //         mapped_memory[(((grid_size/2) - (tenth/2) + i) * grid_size) + ((grid_size/2) - (tenth/2) + j)].alive = bernoulli(generator);
-        //     }
-        // }
-        for (uint32_t i = 0; i < grid_size; i++) {
-            for (uint32_t j = 0; j < grid_size; j++) {
-                mapped_memory[i * grid_size + j].x = i;
-                mapped_memory[i * grid_size + j].y = j;
-                mapped_memory[i * grid_size + j].alive = (i + j) % 2;
+		game::Cell* mapped_memory = static_cast<game::Cell*>(device.mapMemory(device_memory, 0, game_buffer.mem_reqs.size));
+		for (uint32_t i = 0; i < grid_size; i++) {
+			for (uint32_t j = 0; j < grid_size; j++) {
+				mapped_memory[i * grid_size + j].x = i;
+				mapped_memory[i * grid_size + j].y = j;
+				mapped_memory[i * grid_size + j].alive = 0;
+			}
+		}
+        std::random_device rd;
+        std::mt19937 generator(rd());
+        std::bernoulli_distribution bernoulli(0.5);
+        uint32_t tenth = grid_size/10;
+        for (uint32_t i = 0; i < tenth; i++) {
+            for (uint32_t j = 0; j < tenth; j++) {
+                mapped_memory[(((grid_size/2) - (tenth/2) + i) * grid_size) + ((grid_size/2) - (tenth/2) + j)].alive = bernoulli(generator);
             }
         }
         device.unmapMemory(device_memory);
@@ -446,7 +438,7 @@ int main(int argc, char** argv) {
         graphics_pipeline,
         graphics_pipeline_layout,
         vertex_buffer,
-        game_buffers,
+        game_buffer,
         grid_size,
         uniform_sets,
         command_buffers
@@ -491,7 +483,7 @@ int main(int argc, char** argv) {
                 device_memory,
                 descriptor_set_layout,
                 graphics_command_pool,
-                game_buffers,
+                game_buffer,
                 vertex_buffer,
                 swapchain,
                 surface_format,
@@ -511,13 +503,49 @@ int main(int argc, char** argv) {
         }
 
         uint32_t image_index = result.value;
-        game::Camera* mapped_memory = static_cast<game::Camera*>(device.mapMemory(
-            device_memory,
-            camera_buffers[image_index].offset,
-            camera_buffers[image_index].mem_reqs.size
-        ));
-        *mapped_memory = camera;
-        device.unmapMemory(device_memory);
+		{
+			game::Camera* mapped_memory = static_cast<game::Camera*>(device.mapMemory(
+				device_memory,
+				camera_buffers[image_index].offset,
+				camera_buffers[image_index].mem_reqs.size
+			));
+			*mapped_memory = camera;
+			device.unmapMemory(device_memory);
+		}
+		{
+			game::Cell* temp_cells = new game::Cell[grid_size * grid_size];
+			game::Cell* mapped_memory = static_cast<game::Cell*>(device.mapMemory(
+				device_memory,
+				game_buffer.offset,
+				game_buffer.mem_reqs.size
+			));
+			std::memcpy(temp_cells, mapped_memory, grid_size * grid_size * sizeof(game::Cell));
+			for (uint32_t i = 0; i < grid_size; i++) {
+				for (uint32_t j = 0; j < grid_size; j++) {
+					uint32_t adjacent = 0;
+					adjacent += ((i != 0) && temp_cells[(i - 1) * grid_size + j].alive);
+					adjacent += ((i != grid_size - 1) && temp_cells[(i + 1) * grid_size + j].alive);
+					adjacent += ((j != 0) && temp_cells[i * grid_size + (j - 1)].alive);
+					adjacent += ((j != grid_size - 1) && temp_cells[i * grid_size + (j + 1)].alive);
+					adjacent += ((i != 0) && (j != 0) && temp_cells[(i - 1) * grid_size + (j - 1)].alive);
+					adjacent += ((i != grid_size - 1) && (j != 0) && temp_cells[(i + 1) * grid_size + (j - 1)].alive);
+					adjacent += ((i != 0) && (j != grid_size - 1) && temp_cells[(i - 1) * grid_size + (j + 1)].alive);
+					adjacent += ((i != grid_size - 1) && (j != grid_size - 1) && temp_cells[(i + 1) * grid_size + (j + 1)].alive);
+
+					if (temp_cells[i * grid_size + j].alive) {
+						if (adjacent < 2 || adjacent > 3) {
+							mapped_memory[i * grid_size + j].alive = 0;
+						}
+					} else {
+						if (adjacent == 3) {
+							mapped_memory[i * grid_size + j].alive = 1;
+						}
+					}
+				}
+			}
+			device.unmapMemory(device_memory);
+			delete[] temp_cells;
+		}
 
         std::vector<vk::Semaphore> wait_semaphores = { image_available[current_frame] };
         std::vector<vk::Semaphore> signal_semaphores = { render_complete[current_frame] };
@@ -564,7 +592,7 @@ int main(int argc, char** argv) {
                 device_memory,
                 descriptor_set_layout,
                 graphics_command_pool,
-                game_buffers,
+                game_buffer,
                 vertex_buffer,
                 swapchain,
                 surface_format,
@@ -605,9 +633,7 @@ int main(int argc, char** argv) {
         device.destroyBuffer(b.buffer);
     }
     device.destroyBuffer(vertex_buffer.buffer);
-    for (game::Buffer b : game_buffers) {
-        device.destroyBuffer(b.buffer);
-    }
+    device.destroyBuffer(game_buffer.buffer);
     device.freeMemory(device_memory);
     if (compute_queue != graphics_queue) {
         device.destroyCommandPool(compute_command_pool);

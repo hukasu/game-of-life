@@ -203,7 +203,7 @@ namespace game {
         vk::Pipeline graphics_pipeline,
         vk::PipelineLayout graphics_pipeline_layout,
         Buffer vertex_buffer,
-        std::vector<Buffer> game_buffers,
+        Buffer game_buffers,
         uint32_t grid_size,
         std::vector<vk::DescriptorSet> descriptor_sets,
         std::vector<vk::CommandBuffer>& command_buffers

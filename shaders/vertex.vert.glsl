@@ -14,16 +14,14 @@ layout(location = 2) in uint inCellAlive;
 layout(location = 0) out vec3 fragColor;
 
 void main() {
-    //gl_Position = vec4(
-    //    ((inCellPos.x + inVertex.x - ubo.pos.x) / grid_size) * ubo.zoom,
-    //    ((inCellPos.y + inVertex.y - ubo.pos.x) / grid_size) * ubo.zoom,
-    //    0.,
-    //    1.
-    //);
-    gl_Position = vec4(inVertex, 0., 1.);
+    gl_Position = vec4(
+        ((inCellPos + inVertex - ubo.pos) / grid_size) * ubo.zoom,
+        0.,
+        1.
+    );
     if (inCellAlive == 1) {
-        fragColor = vec3(1., 1., 0.);
+        fragColor = vec3(.2, 1., 0.);
     } else {
-        fragColor = vec3(1., 1., 1.);
+        fragColor = vec3(.2, .2, .2);
     }
 }

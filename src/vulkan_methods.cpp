@@ -628,7 +628,7 @@ namespace game {
         vk::Pipeline graphics_pipeline,
         vk::PipelineLayout graphics_pipeline_layout,
         Buffer vertex_buffer,
-        std::vector<Buffer> game_buffers,
+        Buffer game_buffer,
         uint32_t grid_size,
         std::vector<vk::DescriptorSet> descriptor_sets,
         std::vector<vk::CommandBuffer>& command_buffers
@@ -673,7 +673,7 @@ namespace game {
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, graphics_pipeline);
             
             cmd.bindVertexBuffers(0, { vertex_buffer.buffer }, { 0 });
-            cmd.bindVertexBuffers(1, { game_buffers[0].buffer }, { 0 });
+            cmd.bindVertexBuffers(1, { game_buffer.buffer }, { 0 });
             cmd.draw(6, grid_size * grid_size, 0, 0);
 
             cmd.endRenderPass();
