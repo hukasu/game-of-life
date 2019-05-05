@@ -7,9 +7,9 @@ find_package(glfw3 REQUIRED)
 
 add_custom_target(
     shaders
-    $ENV{VULKAN_SDK}/bin/glslangValidator -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vertex.vert.glsl
-    COMMAND $ENV{VULKAN_SDK}/bin/glslangValidator -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fragment.frag.glsl
-    COMMAND $ENV{VULKAN_SDK}/bin/glslangValidator -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compute.comp.glsl
+    $ENV{VULKAN_SDK}/bin/glslangValidator -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vertex.vert.glsl -o vertex.spv
+    COMMAND $ENV{VULKAN_SDK}/bin/glslangValidator -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/fragment.frag.glsl -o fragment.spv
+    COMMAND $ENV{VULKAN_SDK}/bin/glslangValidator -V ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compute.comp.glsl -o compute.spv
     DEPENDS shaders/vertex.vert.glsl shaders/fragment.frag.glsl shaders/compute.comp.glsl
     BYPRODUCTS vertex.spv fragment.spv compute.spv
 )
