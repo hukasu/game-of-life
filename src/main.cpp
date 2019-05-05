@@ -25,14 +25,24 @@ void keyCallback(GLFWwindow * window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        data->camera->x -= std::min(data->camera->x - 5.f, 0.f);
+        data->camera->x -= 5.f;
     } else if (key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        data->camera->x -= std::max(data->camera->x + 5.f, static_cast<float>(data->grid_size));
+        data->camera->x += 5.f;
     } else if (key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        data->camera->x -= std::max(data->camera->y + 5.f, static_cast<float>(data->grid_size));
+        data->camera->y -= 5.f;
     } else if (key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        data->camera->x -= std::min(data->camera->y - 5.f, 0.f);
-    }
+		data->camera->y += 5.f;
+	} else if (key == GLFW_KEY_PERIOD && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+		data->camera->zoom += 0.25f;
+	} else if (key == GLFW_KEY_COMMA && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+		data->camera->zoom -= 0.25f;
+	} else if (key == GLFW_KEY_ENTER && (action == GLFW_PRESS || action == GLFW_REPEAT)) {
+		data->camera->x = data->grid_size / 2.f;
+		data->camera->y = data->grid_size / 2.f;
+		data->camera->zoom = 10.f;
+	}
+	data->camera->zoom = std::min(50.f, data->camera->zoom);
+	data->camera->zoom = std::max(0.25f, data->camera->zoom);
 }
 
 void rebuildSwapchain(
@@ -336,10 +346,10 @@ int main(int argc, char** argv) {
         std::random_device rd;
         std::mt19937 generator(rd());
         std::bernoulli_distribution bernoulli(0.5);
-        uint32_t tenth = grid_size/10;
-        for (uint32_t i = 0; i < tenth; i++) {
-            for (uint32_t j = 0; j < tenth; j++) {
-                mapped_memory[(((grid_size/2) - (tenth/2) + i) * grid_size) + ((grid_size/2) - (tenth/2) + j)].alive = bernoulli(generator);
+        uint32_t fith = grid_size/5;
+        for (uint32_t i = 0; i < fith; i++) {
+            for (uint32_t j = 0; j < fith; j++) {
+                mapped_memory[(((grid_size/2) - (fith /2) + i) * grid_size) + ((grid_size/2) - (fith /2) + j)].alive = bernoulli(generator);
             }
         }
         device.unmapMemory(device_memory);
