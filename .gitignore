@@ -1,3 +1,12 @@
+# Visual Code
 .vscode/
+
+# Visual Studio
+.vs/
+CMakeSettings.json
+
+# CMake
 build/
+
+# MacOS
 .DS_Store
