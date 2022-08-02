@@ -51,4 +51,14 @@ if (APPLE)
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:glfw> $<TARGET_FILE_DIR:game>/
     )
+elseif(WIN32)
+    add_custom_command(
+        TARGET game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:game>/lib/
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:game>/vulkan/
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:game>/vulkan/explicit_layer.d/
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:game>/vulkan/icd.d/
+        
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:glfw> $<TARGET_FILE_DIR:game>/
+    )
 endif()
