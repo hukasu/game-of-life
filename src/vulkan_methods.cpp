@@ -65,7 +65,7 @@ namespace game {
             )
             .setPfnUserCallback(vkDebugUtilsMessengerCallbackEXT);
 
-        std::vector<const char*> layers = { "VK_LAYER_LUNARG_standard_validation" };
+        std::vector<const char*> layers = { "VK_LAYER_KHRONOS_validation" };
         std::vector<const char*> extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
         {
             uint32_t count;
