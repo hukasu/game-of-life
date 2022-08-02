@@ -82,7 +82,7 @@ namespace game {
             .setPpEnabledExtensionNames(extensions.data());
 
         instance = vk::createInstance(instance_info);
-        dispatcher = vk::DispatchLoaderDynamic(instance);
+        dispatcher = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
         debug_utils = instance.createDebugUtilsMessengerEXT(debug_utils_info, nullptr, dispatcher);
     }
 
@@ -149,7 +149,7 @@ namespace game {
             .setPQueueCreateInfos(queue_infos.data());
 
         device = physical_device.createDevice(device_info);
-        dispatcher = vk::DispatchLoaderDynamic(instance, device);
+        dispatcher = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr, device, vkGetDeviceProcAddr);
         graphics_queue.queue = device.getQueue(graphics_queue.index.value(), 0);
         present_queue.queue = device.getQueue(present_queue.index.value(), 0);
         compute_queue.queue = device.getQueue(compute_queue.index.value(), 0);
@@ -594,7 +594,7 @@ namespace game {
             .setRenderPass(renderpass)
             .setSubpass(0);
 
-        graphics_pipeline = device.createGraphicsPipeline(vk::PipelineCache(), graphics_pipeline_info);
+        graphics_pipeline = device.createGraphicsPipeline(vk::PipelineCache(), graphics_pipeline_info).value;
 
         device.destroyShaderModule(vertex_shader);
         device.destroyShaderModule(fragment_shader);
